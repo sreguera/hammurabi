@@ -7,7 +7,6 @@ import Html.Attributes exposing (placeholder, type_, value)
 import Random
 import Result exposing (andThen)
 
-
 acresPerWorker : Int
 acresPerWorker = 10
 
@@ -137,7 +136,8 @@ buy amount model =
     if amount * model.price > model.bushels then
         Err <| "Hammurabi: Think again. You own only " ++  String.fromInt model.bushels ++ " bushels of grain. Now then,"
     else
-        Ok { model
+        Ok 
+            { model
             | acres = model.acres + amount
             , bushels = model.bushels - amount * model.price
             }
@@ -147,20 +147,22 @@ sell amount model =
     if amount > model.acres then
         Err <| "Hammurabi: Think again. You own only " ++  String.fromInt model.acres ++ " acres. Now then,"
     else
-        Ok { model
-           | acres = model.acres - amount
-           , bushels = model.bushels + amount * model.price
-           }
+        Ok 
+            { model
+            | acres = model.acres - amount
+            , bushels = model.bushels + amount * model.price
+            }
 
 feed : Int -> Model -> Result String Model
 feed amount model =
     if amount > model.bushels then
         Err <| "Hammurabi: Think again. You own only " ++  String.fromInt model.bushels ++ " bushels of grain. Now then,"
     else
-        Ok { model
-           | bushels = model.bushels - amount
-           , consumed = amount
-           }
+        Ok 
+            { model
+            | bushels = model.bushels - amount
+            , consumed = amount
+            }
 
 plant : Int -> Model -> Result String Model
 plant amount model =
@@ -171,10 +173,11 @@ plant amount model =
     else if amount > model.population * acresPerWorker then
         Err <| "But you have only " ++  String.fromInt model.population ++ " people to tend the fields! Now then,"
     else
-        Ok { model
-           | planted = amount
-           , bushels = model.bushels - round (toFloat amount * bushelsPerAcre)
-           }
+        Ok 
+            { model
+            | planted = amount
+            , bushels = model.bushels - round (toFloat amount * bushelsPerAcre)
+            }
 
 rats : Model -> Result String Model
 rats model =
@@ -182,11 +185,12 @@ rats model =
         (luck, rnd1) = Random.step (Random.int 1 5) model.rnd
         devoured = if remainderBy 2 luck == 0 then 0 else model.bushels // luck
     in
-        Ok { model
-           | rnd = rnd1
-           , devoured = devoured
-           , bushels = model.bushels - devoured
-           }
+        Ok 
+            { model
+            | rnd = rnd1
+            , devoured = devoured
+            , bushels = model.bushels - devoured
+            }
 
 harvest : Model -> Result String Model
 harvest model =
@@ -194,11 +198,12 @@ harvest model =
         (yield, rnd1) = Random.step (Random.int minYieldBpa maxYieldBpa) model.rnd
         harvested = model.planted * yield
     in
-        Ok { model
-           | rnd = rnd1
-           , yield = yield
-           , bushels = model.bushels + harvested
-           }
+        Ok 
+            { model
+            | rnd = rnd1
+            , yield = yield
+            , bushels = model.bushels + harvested
+            }
 
 life : Model -> Result String Model
 life model =
@@ -209,15 +214,16 @@ life model =
         avgDeaths = (toFloat (model.year - 1) * model.avgDeaths + 
                      toFloat (model.deaths * 100) / toFloat model.population) / toFloat model.year
     in
-        Ok { model
-           | rnd = rnd1
-           , births = births
-           , deaths = deaths
-           , totalDeaths = model.totalDeaths + deaths
-           , avgDeaths = avgDeaths
-           , population = model.population + births - deaths
-           , impeached = (toFloat deaths) > 0.45 * (toFloat model.population)
-           }
+        Ok 
+            { model
+            | rnd = rnd1
+            , births = births
+            , deaths = deaths
+            , totalDeaths = model.totalDeaths + deaths
+            , avgDeaths = avgDeaths
+            , population = model.population + births - deaths
+            , impeached = (toFloat deaths) > 0.45 * (toFloat model.population)
+            }
 
 plague : Model -> Result String Model
 plague model =
@@ -226,23 +232,25 @@ plague model =
         strikes = luck < 0.15
         population = if strikes then model.population // 2 else model.population
     in
-        Ok { model
-           | rnd = rnd1
-           , population = population
-           , plague = strikes
-           }
+        Ok 
+            { model
+            | rnd = rnd1
+            , population = population
+            , plague = strikes
+            }
 
 endYear : Model -> Result String Model
 endYear model =
     let
         (price, rnd1) = Random.step (Random.int 17 26) model.rnd
     in
-        Ok { model
-           | year = model.year + 1
-           , rnd = rnd1
-           , price = price
-           , state = if model.year == 10 || model.impeached then Finished else Playing
-           }
+        Ok 
+            { model
+            | year = model.year + 1
+             , rnd = rnd1
+            , price = price
+            , state = if model.year == 10 || model.impeached then Finished else Playing
+            }
 
 view : Model -> Html Msg
 view model =
