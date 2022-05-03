@@ -1,21 +1,12 @@
 module Hammurabi exposing (main)
 
-import Html exposing (text)
 import Browser
-import Html exposing (Html)
-import Html exposing (div)
-import Html.Events exposing (onClick)
-import Html exposing (button)
-import Html exposing (input)
-import Html.Attributes exposing (value)
-import Html.Attributes exposing (placeholder)
-import Html.Events exposing (onInput)
-import Html.Attributes exposing (type_)
-import Html exposing (label)
-import Html exposing (p)
-import Html exposing (br)
-import Result exposing (andThen)
+import Html exposing (Html, br, button, div, input, label, p, text)
+import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (placeholder, type_, value)
 import Random
+import Result exposing (andThen)
+
 
 acresPerWorker : Int
 acresPerWorker = 10
