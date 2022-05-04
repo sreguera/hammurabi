@@ -269,19 +269,19 @@ view model =
             viewFinished state
 
 viewPlaying : State -> Html Msg
-viewPlaying model =
+viewPlaying state =
     div []
-        [ div [] [ viewState model ]
-        , div [] [ viewPrice model ]
+        [ div [] [ viewState state ]
+        , div [] [ viewPrice state ]
         , div []
-            [ labelledInput "Buy" model.buy Buy
-            , labelledInput "Sell" model.sell Sell
-            , labelledInput "Feed" model.feed Feed
-            , labelledInput "Plant" model.plant Plant
+            [ labelledInput "Buy" state.buy Buy
+            , labelledInput "Sell" state.sell Sell
+            , labelledInput "Feed" state.feed Feed
+            , labelledInput "Plant" state.plant Plant
             ]
         , button [ onClick DoIt ] [ text "Let it be done" ]
         , div []
-            [ p [] [ text <| Maybe.withDefault "" model.error ]
+            [ p [] [ text <| Maybe.withDefault "" state.error ]
             ]
         ]
 
