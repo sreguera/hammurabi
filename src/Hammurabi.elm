@@ -281,11 +281,7 @@ viewPlaying model =
             ]
         , button [ onClick DoIt ] [ text "Let it be done" ]
         , div []
-            [ case model.error of
-                Nothing ->
-                    p [] []
-                Just msg ->
-                    p [] [ text msg ]
+            [ p [] [ text <| Maybe.withDefault "" model.error ]
             ]
         ]
 
