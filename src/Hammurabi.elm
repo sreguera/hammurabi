@@ -313,7 +313,7 @@ viewState state =
             , br [] []
             , if state.plague then
                 text <| "A horrible plague struck! Half the people died." 
-            else 
+              else 
                 text ""
             , if state.plague then br [] [] else text ""
             , text <| "The city population is now " ++ String.fromInt state.population ++ "."
@@ -334,7 +334,10 @@ viewState state =
 viewFinished : State -> Html Msg
 viewFinished state =
     div []
-        [ div [] [ viewFinalReport state ]
+        [ div []
+            [ viewFinalReport state
+            , viewScore state
+            ]
         , button [ onClick Restart ] [ text "Play again" ]
         ]
 
@@ -343,16 +346,10 @@ viewFinalReport state =
     if state.impeached then
         p [] 
             [ text <| "You starved " ++ String.fromInt state.deaths ++ " people in one year!!!"
-            , br [] []
-            , text "Due to this extreme mismanagement you have not only been impeached "
-            , text "and thrown out of office but you have also been declared national fink!!!"
-            , br [] []
             ]
     else
         let
             app = toFloat state.acres / toFloat state.population
-            (luck, rnd1) = Random.step (Random.float 0 1) state.rnd
-            haters = round (toFloat state.population * 0.8 * luck)
         in
             p []
                 [ text <| "In your ten-year term of office, " ++ String.fromFloat state.avgDeaths ++ 
@@ -360,28 +357,72 @@ viewFinalReport state =
                     " people died."
                 , br [] []
                 , text <| "You started with 10 acres per person and ended with " ++ String.fromFloat app ++ " acres per person."
-                , br [] []
-                , if state.avgDeaths > 33 || app < 7 then
-                    p [] 
-                        [ text "Due to this extreme mismanagement you have not only been impeached "
-                        , text "and thrown out of office but you have also been declared national fink!!!"
-                        ]
-                  else if state.avgDeaths > 10 || app < 9 then
-                    p [] 
-                        [ text "Your heavy-handed performance smacks of Nero and Ivan IV. "
-                        , br [] []
-                        , text "The people (remaining) find you an unpleasant ruler, and, frankly, hate your guts!!"
-                        ]
-                  else if state.avgDeaths > 3 || app < 10 then
-                    p [] 
-                        [ text "Your performance could be somewhat better, but really wasn't too bad at all."
-                        , br [] []
-                        , text <| String.fromInt haters ++ " people dearly want to see you assasinated but we all have our trivial problems."
-                        ]
-                  else
-                    text "A fantastic performance!!! Charlemagne, Disraeli, and Jefferson combined could not have done better"
                 ]
 
+viewScore : State -> Html Msg
+viewScore state =
+    case score state of
+        Terrible ->
+            terribleScore
+        Awful ->
+            awfulScore
+        Good ->
+            goodScore state
+        Excellent ->
+            excellentScore
+
+terribleScore : Html Msg
+terribleScore =
+    p [] 
+        [ text "Due to this extreme mismanagement you have not only been impeached "
+        , text "and thrown out of office but you have also been declared national fink!!!"
+        ]
+
+awfulScore : Html Msg
+awfulScore =
+    p [] 
+        [ text "Your heavy-handed performance smacks of Nero and Ivan IV. "
+        , br [] []
+        , text "The people (remaining) find you an unpleasant ruler, and, frankly, hate your guts!!"
+        ]
+
+goodScore : State -> Html Msg
+goodScore state =
+    let
+        (luck, rnd1) = Random.step (Random.float 0 1) state.rnd
+        haters = round (toFloat state.population * 0.8 * luck)
+    in
+        p [] 
+            [ text "Your performance could be somewhat better, but really wasn't too bad at all."
+            , br [] []
+            , text <| String.fromInt haters ++ " people dearly want to see you assasinated but we all have our trivial problems."
+            ]
+
+excellentScore : Html Msg
+excellentScore =
+    p [] 
+        [ text "A fantastic performance!!! Charlemagne, Disraeli, and Jefferson combined could not have done better"
+        ]
+
+type Score 
+    = Terrible
+    | Awful
+    | Good
+    | Excellent
+
+score : State -> Score
+score state =
+    let
+        app = toFloat state.acres / toFloat state.population
+    in
+        if state.avgDeaths > 33 || app < 7  || state.impeached then
+            Terrible
+        else if state.avgDeaths > 10 || app < 9 then
+            Awful
+        else if state.avgDeaths > 3 || app < 10 then
+            Good
+        else
+            Excellent
 
 main : Program () Model Msg
 main =
