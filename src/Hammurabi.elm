@@ -20,12 +20,11 @@ maxYieldBpa : Int
 maxYieldBpa = 5
 
 type Model
-    = Playing State
+    = Playing Form State
     | Finished State
 
 type alias State = 
-    { error : Maybe String
-    , rnd : Random.Seed
+    { rnd : Random.Seed
     , year : Int
     , impeached : Bool
     , population : Int
@@ -41,6 +40,10 @@ type alias State =
     , devoured : Int
     , bushels : Int
     , price : Int
+    }
+
+type alias Form =
+    { error : Maybe String
     , buy : String
     , sell : String
     , feed : String
@@ -48,34 +51,40 @@ type alias State =
     }
 
 init : Model
-init =
+init = Playing initForm initState
+
+initForm : Form
+initForm =
+    { error = Nothing
+    , buy = "0"
+    , sell = "0"
+    , feed = "0"
+    , plant = "0"
+    }
+
+initState : State
+initState =
     let
         rnd0 = Random.initialSeed 42
         (price, rnd1) = Random.step (Random.int 17 26) rnd0
     in
-        Playing
-            { error = Nothing
-            , rnd = rnd1
-            , year = 1
-            , impeached = False
-            , population = 100
-            , deaths = 0
-            , totalDeaths = 0
-            , avgDeaths = 0
-            , births = 5
-            , plague = False
-            , acres = 1000
-            , planted = 0
-            , yield = 3
-            , consumed = 0
-            , devoured = 200
-            , bushels = 2800
-            , price = price
-            , buy = "0"
-            , sell = "0"
-            , feed = "0"
-            , plant = "0"
-            }
+        { rnd = rnd1
+        , year = 1
+        , impeached = False
+        , population = 100
+        , deaths = 0
+        , totalDeaths = 0
+        , avgDeaths = 0
+        , births = 5
+        , plague = False
+        , acres = 1000
+        , planted = 0
+        , yield = 3
+        , consumed = 0
+        , devoured = 200
+        , bushels = 2800
+        , price = price
+        }
 
 type Msg
     = Restart
@@ -90,26 +99,26 @@ update msg model =
     case (msg, model) of
         (Restart, _) ->
             init
-        (DoIt, Playing state) ->
-            step state
-        (Buy s, Playing state) ->
-            Playing { state | buy = s }
-        (Sell s, Playing state) ->
-            Playing { state | sell = s }
-        (Feed s, Playing state) ->
-            Playing { state | feed = s }
-        (Plant s, Playing state) ->
-            Playing { state | plant = s }
+        (DoIt, Playing form state) ->
+            step form state
+        (Buy s, Playing form state) ->
+            Playing { form | buy = s } state
+        (Sell s, Playing form state) ->
+            Playing { form | sell = s } state
+        (Feed s, Playing form state) ->
+            Playing { form | feed = s } state
+        (Plant s, Playing form state) ->
+            Playing { form | plant = s } state
         (_, _) ->
             model
 
-step : State -> Model
-step state =
+step : Form -> State -> Model
+step form state =
     let
-        buyA = Maybe.withDefault 0 (String.toInt state.buy)
-        sellA = Maybe.withDefault 0 (String.toInt state.sell)
-        feedA = Maybe.withDefault 0 (String.toInt state.feed)
-        plantA = Maybe.withDefault 0 (String.toInt state.plant)
+        buyA = Maybe.withDefault 0 (String.toInt form.buy)
+        sellA = Maybe.withDefault 0 (String.toInt form.sell)
+        feedA = Maybe.withDefault 0 (String.toInt form.feed)
+        plantA = Maybe.withDefault 0 (String.toInt form.plant)
         resultState = 
             Ok state 
                 |> andThen (buy buyA)
@@ -125,20 +134,15 @@ step state =
         case resultState of
             Ok nextState ->
                 if nextState.year == 11 || nextState.impeached then 
-                    Finished 
-                        { nextState
-                        | error = Nothing
-                        }
+                    Finished nextState 
                 else
-                    Playing
-                        { nextState
-                        | error = Nothing
-                        }
+                    Playing initForm nextState
             Err str ->
                 Playing
-                    { state
+                    { form
                     | error = Just str
                     }
+                    state
 
 buy : Int -> State -> Result String State
 buy amount state =
@@ -263,25 +267,30 @@ endYear state =
 view : Model -> Html Msg
 view model =
     case model of
-        Playing state ->
-            viewPlaying state
+        Playing form state ->
+            viewPlaying form state
         Finished state ->
             viewFinished state
 
-viewPlaying : State -> Html Msg
-viewPlaying state =
+viewPlaying : Form -> State -> Html Msg
+viewPlaying form state =
     div []
-        [ div [] [ viewState state ]
-        , div [] [ viewPrice state ]
-        , div []
-            [ labelledInput "Buy" state.buy Buy
-            , labelledInput "Sell" state.sell Sell
-            , labelledInput "Feed" state.feed Feed
-            , labelledInput "Plant" state.plant Plant
+        [ viewState state
+        , viewForm form
+        ]
+
+viewForm : Form -> Html Msg
+viewForm form =
+    div []
+        [ div []
+            [ labelledInput "Buy" form.buy Buy
+            , labelledInput "Sell" form.sell Sell
+            , labelledInput "Feed" form.feed Feed
+            , labelledInput "Plant" form.plant Plant
             ]
         , button [ onClick DoIt ] [ text "Let it be done" ]
         , div []
-            [ p [] [ text <| Maybe.withDefault "" state.error ]
+            [ p [] [ text <| Maybe.withDefault "" form.error ]
             ]
         ]
 
@@ -294,33 +303,33 @@ labelledInput lbl val msg =
 
 viewState : State -> Html Msg
 viewState state =
-    p []
-        [ text "Hammurabi: I beg to report to you,"
-        , br [] []
-        , text <| "In year " ++ String.fromInt state.year ++ ", "
-                  ++ String.fromInt state.deaths ++ " people starved, " 
-                  ++ String.fromInt state.births ++ " came to the city." 
-        , br [] []
-        , if state.plague then
-            text <| "A horrible plague struck! Half the people died." 
-          else 
-            text ""
-        , if state.plague then br [] [] else text ""
-        , text <| "The city population is now " ++ String.fromInt state.population ++ "."
-        , br [] []
-        , text <| "The city now owns " ++ String.fromInt state.acres ++ " acres."
-        , br [] []
-        , text <| "You harvested " ++ String.fromInt state.yield ++ " bushels per acre."
-        , br [] []
-        , text <| "Rats ate " ++ String.fromInt state.devoured ++ " bushels."
-        , br [] []
-        , text <| "You now have " ++ String.fromInt state.bushels ++ " bushels in store."
+    div []
+        [ p []
+            [ text "Hammurabi: I beg to report to you,"
+            , br [] []
+            , text <| "In year " ++ String.fromInt state.year ++ ", "
+                    ++ String.fromInt state.deaths ++ " people starved, " 
+                    ++ String.fromInt state.births ++ " came to the city." 
+            , br [] []
+            , if state.plague then
+                text <| "A horrible plague struck! Half the people died." 
+            else 
+                text ""
+            , if state.plague then br [] [] else text ""
+            , text <| "The city population is now " ++ String.fromInt state.population ++ "."
+            , br [] []
+            , text <| "The city now owns " ++ String.fromInt state.acres ++ " acres."
+            , br [] []
+            , text <| "You harvested " ++ String.fromInt state.yield ++ " bushels per acre."
+            , br [] []
+            , text <| "Rats ate " ++ String.fromInt state.devoured ++ " bushels."
+            , br [] []
+            , text <| "You now have " ++ String.fromInt state.bushels ++ " bushels in store."
+            ]
+        , p [] 
+            [ text <| "Land is trading at " ++ String.fromInt state.price ++ " bushels per acre." 
+            ]
         ]
-
-viewPrice : State -> Html Msg
-viewPrice state =
-    p [] [ text <| "Land is trading at " ++ String.fromInt state.price ++ " bushels per acre." ]
-
 
 viewFinished : State -> Html Msg
 viewFinished state =
